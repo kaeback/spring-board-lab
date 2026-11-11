@@ -1,0 +1,140 @@
+* { box-sizing: border-box; }
+body {
+    font-family: "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    margin: 0;
+    background: #f5f6f8;
+    color: #222;
+}
+.container {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 24px 16px 60px;
+}
+header.topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #fff;
+    padding: 14px 24px;
+    border-bottom: 1px solid #e3e5e8;
+}
+header.topbar a { text-decoration: none; color: #333; }
+header.topbar .brand { font-size: 18px; font-weight: 700; color: #3b5bdb; }
+header.topbar .menu a { margin-left: 14px; font-size: 14px; }
+
+h1, h2 { margin-top: 0; }
+
+table.board-list {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+}
+table.board-list th, table.board-list td {
+    border-bottom: 1px solid #eee;
+    padding: 10px 12px;
+    font-size: 14px;
+    text-align: left;
+}
+table.board-list th { background: #fafafa; }
+table.board-list td a { text-decoration: none; color: #222; }
+table.board-list td a:hover { color: #3b5bdb; }
+.center { text-align: center; }
+
+.btn {
+    display: inline-block;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    background: #3b5bdb;
+    color: #fff;
+    font-size: 14px;
+    cursor: pointer;
+    text-decoration: none;
+}
+.btn.gray { background: #868e96; }
+.btn.danger { background: #e03131; }
+.btn:disabled { opacity: .6; cursor: default; }
+.button-row { margin-top: 20px; display: flex; gap: 8px; align-items: center; }
+.btn.small { padding: 3px 8px; font-size: 12px; }
+
+.card {
+    background: #fff;
+    border: 1px solid #e3e5e8;
+    border-radius: 8px;
+    padding: 24px;
+    margin-bottom: 20px;
+}
+.form-group { margin-bottom: 16px; }
+.form-group label { display: block; font-size: 14px; margin-bottom: 6px; font-weight: 600; }
+.form-group input, .form-group textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 14px;
+}
+.form-group textarea { min-height: 200px; resize: vertical; }
+.error { color: #e03131; font-size: 13px; margin-top: 4px; }
+.field-error { border-color: #e03131 !important; }
+
+.pagination { text-align: center; margin-top: 20px; }
+.pagination a, .pagination span {
+    display: inline-block;
+    padding: 6px 11px;
+    margin: 0 2px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    text-decoration: none;
+    color: #333;
+    font-size: 13px;
+}
+.pagination .active { background: #3b5bdb; color: #fff; border-color: #3b5bdb; }
+
+.toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+.search-box { display: flex; gap: 6px; }
+.search-box input { padding: 8px; border: 1px solid #ccc; border-radius: 6px; }
+
+.post-meta { color: #888; font-size: 13px; margin-bottom: 16px; }
+.ai-summary {
+    background: #eef2ff;
+    border: 1px solid #c7d2fe;
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 18px;
+    line-height: 1.6;
+    font-size: 14px;
+    color: #333;
+}
+.ai-summary-title { font-weight: 700; color: #3b5bdb; margin-bottom: 6px; font-size: 13px; }
+.original-label {
+    font-size: 13px; font-weight: 700; color: #868e96;
+    border-bottom: 1px solid #eee; padding-bottom: 6px; margin-bottom: 12px;
+}
+.post-content { line-height: 1.7; white-space: pre-wrap; min-height: 120px; }
+.attachment { margin-top: 16px; padding: 12px; background: #f1f3f5; border-radius: 6px; font-size: 14px; }
+
+/* 댓글 */
+.comment-section { margin-top: 30px; }
+.comment-item {
+    border-bottom: 1px solid #eee;
+    padding: 12px 4px;
+}
+.comment-item .writer { font-weight: 600; font-size: 14px; }
+.comment-item .date { color: #aaa; font-size: 12px; margin-left: 8px; }
+.comment-item .text { margin-top: 6px; font-size: 14px; white-space: pre-wrap; }
+.comment-form { display: flex; gap: 8px; margin-top: 16px; }
+.comment-form textarea { flex: 1; min-height: 60px; padding: 8px; border: 1px solid #ccc; border-radius: 6px; }
+
+/* 로딩 스피너 */
+.spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #fff;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+    vertical-align: middle;
+}
+.loading-text { color: #888; font-size: 13px; padding: 10px 4px; }
+@keyframes spin { to { transform: rotate(360deg); } }

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>글 수정</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<header th:replace="~{fragments/layout :: topbar}"></header>
+
+<div class="container">
+    <h1>글 수정</h1>
+    <div class="card">
+        <form th:action="@{/boards/{id}/edit(id=${boardId})}" th:object="${boardForm}" method="post">
+            <div class="form-group">
+                <label for="writer">작성자</label>
+                <input type="text" id="writer" th:field="*{writer}">
+            </div>
+            <div class="form-group">
+                <label for="title">제목</label>
+                <input type="text" id="title" th:field="*{title}">
+            </div>
+            <div class="form-group">
+                <label for="content">내용</label>
+                <textarea id="content" th:field="*{content}"></textarea>
+            </div>
+            <button type="submit" class="btn">수정</button>
+            <a th:href="@{/boards/{id}(id=${boardId})}" class="btn gray">취소</a>
+        </form>
+    </div>
+</div>
+</body>
+</html>
