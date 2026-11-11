@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>오류가 발생했습니다</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<!--
+  step5: 스프링 부트 오류 페이지.
+  BasicErrorController가 상태 코드에 맞춰 templates/error/5xx.html 을 찾아 렌더링한다.
+  (우선순위: 정확한 코드 404.html → 4xx.html → 기본 Whitelabel 페이지)
+  모델에는 status, error, path, timestamp 등이 담겨 온다.
+-->
+<header th:replace="~{fragments/layout :: topbar}"></header>
+<div class="container">
+    <div class="card">
+        <h1>일시적인 오류가 발생했습니다</h1>
+        <p>잠시 후 다시 시도해 주세요. 문제가 계속되면 관리자에게 알려 주세요.</p>
+        <p class="post-meta">
+            <span th:text="${status}">500</span> · <span th:text="${path}">/path</span>
+        </p>
+        <a class="btn" th:href="@{/boards}">목록으로</a>
+    </div>
+</div>
+</body>
+</html>

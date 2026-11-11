@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import net.datasa.board.domain.Board;
 import net.datasa.board.domain.Member;
 import net.datasa.board.dto.BoardForm;
+import net.datasa.board.exception.BoardNotFoundException;
 import net.datasa.board.repository.BoardRepository;
 import net.datasa.board.repository.MemberRepository;
 import org.springframework.stereotype.Service;
@@ -57,7 +58,7 @@ public class BoardService {
     @Transactional
     public Board getDetailAndIncreaseView(Long id) {
         Board board = boardRepository.findWithWriterById(id)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 글입니다. id=" + id));
+                .orElseThrow(() -> new BoardNotFoundException(id));   // step5: 404로 응답
         board.setViewCount(board.getViewCount() + 1);
         return board;
     }
@@ -65,7 +66,7 @@ public class BoardService {
     /** 글 단건 조회 (조회수 증가 없음) — 수정 화면 등 내부용 (제목·내용만 쓰므로 작성자는 조회하지 않는다) */
     public Board getById(Long id) {
         return boardRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 글입니다. id=" + id));
+                .orElseThrow(() -> new BoardNotFoundException(id));   // step5: 404로 응답
     }
 
     /** 글 수정 — 제목·내용만 바꾸고 작성자는 유지한다 (변경 감지로 UPDATE) */
