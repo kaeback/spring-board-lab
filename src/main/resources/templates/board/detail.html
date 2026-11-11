@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
     <title th:text="${board.title}">글 상세</title>
@@ -30,13 +31,15 @@
         <div class="button-row">
             <a th:href="@{/boards}" class="btn gray">목록</a>
 
-            <!-- 작성자 본인에게만 수정/삭제 노출 -->
-            <span th:if="${session.loginMember != null and session.loginMember.loginId == board.writer}">
-                <a th:href="@{/boards/{id}/edit(id=${board.id})}" class="btn">수정</a>
-                <form th:action="@{/boards/{id}/delete(id=${board.id})}" method="post"
-                      style="display:inline" onsubmit="return confirm('정말 삭제하시겠습니까?');">
-                    <button type="submit" class="btn danger">삭제</button>
-                </form>
+            <!-- 작성자 본인에게만 수정/삭제 노출 (로그인 + 작성자 일치) -->
+            <span sec:authorize="isAuthenticated()">
+                <span th:if="${#authentication.name == board.writer}">
+                    <a th:href="@{/boards/{id}/edit(id=${board.id})}" class="btn">수정</a>
+                    <form th:action="@{/boards/{id}/delete(id=${board.id})}" method="post"
+                          style="display:inline" onsubmit="return confirm('정말 삭제하시겠습니까?');">
+                        <button type="submit" class="btn danger">삭제</button>
+                    </form>
+                </span>
             </span>
         </div>
     </div>
@@ -46,11 +49,11 @@
         <div class="original-label">댓글 <span id="comment-count">0</span></div>
         <div id="comment-list"></div>
 
-        <div class="comment-form" th:if="${session.loginMember != null}">
+        <div class="comment-form" sec:authorize="isAuthenticated()">
             <textarea id="comment-content" placeholder="댓글을 입력하세요 (300자 이내)"></textarea>
             <button type="button" class="btn" onclick="addComment()">등록</button>
         </div>
-        <p class="loading-text" th:if="${session.loginMember == null}">
+        <p class="loading-text" sec:authorize="!isAuthenticated()">
             <a th:href="@{/login(redirectURL=${'/boards/' + board.id})}">로그인</a>하면 댓글을 쓸 수 있습니다.
         </p>
     </div>
@@ -58,7 +61,7 @@
 
 <script th:inline="javascript">
     const boardId = /*[[${board.id}]]*/ 1;
-    const loginId = /*[[${session.loginMember?.loginId}]]*/ null;
+    const loginId = /*[[${#authorization.expression('isAuthenticated()') ? #authentication.name : null}]]*/ null;
 
     // 댓글 목록: GET → JSON 배열을 받아 화면에 그린다
     async function loadComments() {

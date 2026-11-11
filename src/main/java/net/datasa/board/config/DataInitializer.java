@@ -18,7 +18,7 @@ import org.springframework.stereotype.Component;
  *
  * 이미 데이터가 있으면 다시 넣지 않는다(중복 방지). 글은 페이징 효과를 볼 수 있도록 넉넉히 시드한다.
  *
- * 로그인 테스트 계정: hong / kim / admin  (비밀번호 모두 1234)
+ * 로그인 테스트 계정: hong / kim / admin  (비밀번호 모두 1234, admin만 ROLE_ADMIN)
  */
 @Component
 @RequiredArgsConstructor
@@ -37,6 +37,11 @@ public class DataInitializer implements CommandLineRunner {
             member("hong", "1234", "홍길동");
             member("kim", "1234", "김철수");
             member("admin", "1234", "관리자");
+            // 가입은 누구나 ROLE_USER로 되므로, 관리자 계정은 여기서 권한을 바꿔 둔다
+            memberRepository.findByLoginId("admin").ifPresent(admin -> {
+                admin.setRole("ROLE_ADMIN");
+                memberRepository.save(admin);
+            });
         }
 
         if (boardRepository.count() == 0) {

@@ -6,7 +6,7 @@ plugins {
 
 group = 'net.datasa'
 version = '0.0.1-SNAPSHOT'
-description = 'spring-board (step8 - 테스트)'
+description = 'spring-board (step9 - 시큐리티)'
 
 java {
     toolchain {
@@ -24,18 +24,21 @@ repositories {
 }
 
 dependencies {
-    // step8은 step7(웹 + 화면 + 세션 로그인 + 검증 + JPA + 필터/인터셉터 + 파일/페이징 + 댓글 API)에 테스트를 더한다. 시큐리티는 다음 단계에서 추가한다.
+    // step9는 웹 + 화면 + 검증 + JPA + 파일업로드/페이징 + 댓글 API + 테스트 + 시큐리티를 사용한다.
     implementation 'org.springframework.boot:spring-boot-starter-webmvc'   // Boot 4: 옛 starter-web
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
     implementation 'org.springframework.boot:spring-boot-starter-validation'   // step3
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'     // step4
     runtimeOnly 'org.postgresql:postgresql'                                   // step4
+    implementation 'org.springframework.boot:spring-boot-starter-security'     // step9
+    implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'     // step9 (sec: 네임스페이스)
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     // Boot 4: 기술별 테스트 스타터 (각각 spring-boot-starter-test 포함)
     testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'  // step4
+    testImplementation 'org.springframework.boot:spring-boot-starter-security-test'  // step9 (@WithMockUser 등)
     testRuntimeOnly 'com.h2database:h2'                                        // step8: 테스트용 내장 DB
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     mockitoAgent('org.mockito:mockito-core') { transitive = false }               // step8

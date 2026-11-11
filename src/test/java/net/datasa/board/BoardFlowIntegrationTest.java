@@ -1,5 +1,6 @@
 package net.datasa.board;
 
+import net.datasa.board.repository.MemberRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,20 +12,22 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestBuilders.formLogin;
+import static org.springframework.security.test.web.servlet.response.SecurityMockMvcResultMatchers.authenticated;
+import static org.springframework.security.test.web.servlet.response.SecurityMockMvcResultMatchers.unauthenticated;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * 통합 테스트 — 애플리케이션 전체(컨트롤러~서비스~JPA~DB)를 띄워 "로그인 → 글쓰기 → 상세"를 검증한다.
+ * 통합 테스트 (step9): 실제 SecurityConfig·CustomUserDetailsService·BCrypt로
+ * "폼 로그인 → 글쓰기 → 상세"를 검증한다.
  *
- * <ul>
- *   <li>{@code @AutoConfigureMockMvc}: Boot 4의 @SpringBootTest는 MockMvc를 자동으로 만들지 않으므로 직접 켠다.</li>
- *   <li>{@code @AutoConfigureTestDatabase}: application.yml의 PostgreSQL 대신 내장 H2를 쓴다.
- *       (실제 PostgreSQL로 검증하고 싶다면 Testcontainers를 쓰는 방법이 있다)</li>
- *   <li>DataInitializer가 그대로 실행되므로 샘플 회원 hong/1234로 로그인할 수 있다.</li>
- * </ul>
+ * {@code formLogin("/login").user("loginId", ...)}는 Security 테스트 도구가 제공하는 로그인 요청 빌더다.
+ * 우리 폼의 아이디 필드명이 username이 아니라 loginId이므로 파라미터 이름을 함께 지정한다.
  */
 @SpringBootTest(properties = "file.upload-dir=build/test-uploads")
 @AutoConfigureMockMvc
@@ -32,20 +35,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class BoardFlowIntegrationTest {
 
     @Autowired MockMvc mockMvc;
+    @Autowired MemberRepository memberRepository;
 
     @Test
-    @DisplayName("로그인 → 글쓰기 → 상세 조회까지 실제 빈과 DB로 동작한다")
+    @DisplayName("폼 로그인 → 글쓰기 → 상세 조회")
     void loginWriteDetail() throws Exception {
-        // 로그인 (세션에 회원 저장)
-        MvcResult login = mockMvc.perform(post("/login")
-                        .param("loginId", "hong")
-                        .param("password", "1234"))
-                .andExpect(status().is3xxRedirection())
+        MvcResult login = mockMvc.perform(formLogin("/login").user("loginId", "hong").password("password", "1234"))
+                .andExpect(authenticated().withUsername("hong"))
+                .andExpect(redirectedUrl("/boards"))
                 .andReturn();
         MockHttpSession session = (MockHttpSession) login.getRequest().getSession(false);
-        assertThat(session).isNotNull();
 
-        // 글쓰기 → /boards/{id} 로 리다이렉트
         MvcResult write = mockMvc.perform(post("/boards/write")
                         .session(session)
                         .param("title", "통합 테스트 글")
@@ -55,20 +55,32 @@ class BoardFlowIntegrationTest {
         String location = write.getResponse().getRedirectedUrl();
         assertThat(location).matches("/boards/\\d+");
 
-        // 상세 화면에 제목과 작성자가 보인다
         mockMvc.perform(get(location))
                 .andExpect(status().isOk())
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("통합 테스트 글")))
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("hong")));
+                .andExpect(content().string(containsString("통합 테스트 글")))
+                .andExpect(content().string(containsString("hong")));
     }
 
     @Test
-    @DisplayName("틀린 비밀번호로는 로그인되지 않는다")
+    @DisplayName("틀린 비밀번호 → 인증 실패, /login?error 로 이동")
     void loginFail() throws Exception {
-        mockMvc.perform(post("/login")
-                        .param("loginId", "hong")
-                        .param("password", "wrong"))
-                .andExpect(status().isOk())   // 로그인 화면을 다시 보여 준다
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("올바르지 않습니다")));
+        mockMvc.perform(formLogin("/login").user("loginId", "hong").password("password", "wrong"))
+                .andExpect(unauthenticated())
+                .andExpect(redirectedUrl("/login?error"));
+    }
+
+    @Test
+    @DisplayName("비밀번호는 BCrypt로 암호화되어 저장된다")
+    void passwordIsEncoded() {
+        String stored = memberRepository.findByLoginId("hong").orElseThrow().getPassword();
+        assertThat(stored).startsWith("$2a$").isNotEqualTo("1234");
+    }
+
+    @Test
+    @DisplayName("없는 글은 비로그인 사용자에게도 404")
+    void notFoundPageForAnonymous() throws Exception {
+        // MockMvc는 /error 로 포워드하지 않으므로 상태 코드만 확인한다 (/error permitAll 효과는 실제 서버에서 확인)
+        mockMvc.perform(get("/boards/999999"))
+                .andExpect(status().isNotFound());
     }
 }

@@ -1,16 +1,19 @@
 package net.datasa.board.api;
 
+import net.datasa.board.config.SecurityConfig;
 import net.datasa.board.domain.Member;
 import net.datasa.board.dto.CommentResponse;
 import net.datasa.board.exception.BoardNotFoundException;
 import net.datasa.board.service.CommentService;
-import net.datasa.board.web.SessionConst;
+import net.datasa.board.security.CustomUserDetails;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;   // Boot 4 패키지
 import org.springframework.http.MediaType;
-import org.springframework.mock.web.MockHttpSession;
+import org.springframework.context.annotation.Import;
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -35,6 +38,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * {@code jsonPath("$.code")}처럼 JSON 안의 값을 경로로 꺼내 비교한다.
  */
 @WebMvcTest(CommentApiController.class)
+@Import(SecurityConfig.class)      // 우리 보안 규칙(401 JSON 진입점 포함)을 함께 띄운다
 class CommentApiControllerTest {
 
     @Autowired MockMvc mockMvc;
@@ -64,7 +68,7 @@ class CommentApiControllerTest {
     }
 
     @Test
-    @DisplayName("로그인하지 않으면 댓글을 쓸 수 없다 → 401")
+    @DisplayName("로그인하지 않으면 댓글을 쓸 수 없다 → 시큐리티가 401 JSON")
     void writeWithoutLogin() throws Exception {
         mockMvc.perform(post("/api/boards/1/comments")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -82,7 +86,7 @@ class CommentApiControllerTest {
                 .thenReturn(new CommentResponse(5L, "hong", "안녕", "2026-11-11 10:00"));
 
         mockMvc.perform(post("/api/boards/1/comments")
-                        .session(loginSession("hong"))
+                        .with(loginAs("hong"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"content\":\"안녕\"}"))
                 .andExpect(status().isCreated())
@@ -94,7 +98,7 @@ class CommentApiControllerTest {
     @DisplayName("빈 댓글 → 400 VALIDATION")
     void writeBlank() throws Exception {
         mockMvc.perform(post("/api/boards/1/comments")
-                        .session(loginSession("hong"))
+                        .with(loginAs("hong"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"content\":\" \"}"))
                 .andExpect(status().isBadRequest())
@@ -106,7 +110,7 @@ class CommentApiControllerTest {
     void deleteOthers() throws Exception {
         when(commentService.isOwner(7L, "hong")).thenReturn(false);
 
-        mockMvc.perform(delete("/api/comments/7").session(loginSession("hong")))
+        mockMvc.perform(delete("/api/comments/7").with(loginAs("hong")))
                 .andExpect(status().isForbidden());
 
         verify(commentService, never()).delete(any());
@@ -117,18 +121,18 @@ class CommentApiControllerTest {
     void deleteMine() throws Exception {
         when(commentService.isOwner(7L, "hong")).thenReturn(true);
 
-        mockMvc.perform(delete("/api/comments/7").session(loginSession("hong")))
+        mockMvc.perform(delete("/api/comments/7").with(loginAs("hong")))
                 .andExpect(status().isNoContent());
 
         verify(commentService).delete(7L);
     }
 
-    private MockHttpSession loginSession(String loginId) {
+    /** @AuthenticationPrincipal CustomUserDetails 로 들어갈 로그인 사용자 */
+    private RequestPostProcessor loginAs(String loginId) {
         Member member = new Member();
         member.setLoginId(loginId);
         member.setName(loginId);
-        MockHttpSession session = new MockHttpSession();
-        session.setAttribute(SessionConst.LOGIN_MEMBER, member);
-        return session;
+        member.setRole("ROLE_USER");
+        return SecurityMockMvcRequestPostProcessors.user(new CustomUserDetails(member));
     }
 }

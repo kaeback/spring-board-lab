@@ -1,23 +1,23 @@
 <!DOCTYPE html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <body>
 
 <!--
   공통 상단바 조각(fragment).
-  각 페이지에서 <header th:replace="~{fragments/layout :: topbar}"></header> 로 끼워 넣는다.
-  세션(${session.loginMember})에 따라 로그인/로그아웃을 다르게 보여준다.
+  step9부터 로그인 표시는 세션 대신 Spring Security의 sec: 네임스페이스로 판단한다.
 -->
 <header th:fragment="topbar" class="topbar">
     <a class="brand" th:href="@{/boards}">게시판</a>
     <div class="menu">
         <a th:href="@{/boards}">목록</a>
-        <span th:if="${session.loginMember != null}">
-            <b th:text="${session.loginMember.name}">사용자</b>님
+        <span sec:authorize="isAuthenticated()">
+            <b sec:authentication="principal.member.name">사용자</b>님
             <form th:action="@{/logout}" method="post" style="display:inline">
                 <button type="submit" class="btn gray" style="padding:4px 10px">로그아웃</button>
             </form>
         </span>
-        <span th:if="${session.loginMember == null}">
+        <span sec:authorize="isAnonymous()">
             <a th:href="@{/login}">로그인</a>
             <a th:href="@{/join}">회원가입</a>
         </span>

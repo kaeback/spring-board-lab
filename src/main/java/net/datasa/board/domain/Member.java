@@ -26,7 +26,9 @@ public class Member {
     @Column(unique = true, nullable = false)
     private String loginId;   // 로그인 아이디
 
-    private String password;  // 비밀번호 (step4는 평문 — 암호화는 step9 시큐리티에서 다룬다)
+    private String password;  // 비밀번호 (step9부터 BCrypt 암호화)
 
     private String name;      // 표시 이름
+
+    private String role;      // 권한 (예: ROLE_USER)
 }
