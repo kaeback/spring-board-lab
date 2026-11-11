@@ -35,4 +35,7 @@ public interface BoardRepository extends JpaRepository<Board, Long> {
 
     /** 작성자 확인 — 글 id와 작성자 loginId가 모두 맞는 글이 있는지 (쿼리 한 번, LAZY 접근 없음) */
     boolean existsByIdAndWriterLoginId(Long id, String loginId);
+
+    /** 가장 최근 글 하나 (샘플 댓글 시드용) */
+    Optional<Board> findTopByOrderByIdDesc();
 }
