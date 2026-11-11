@@ -13,7 +13,8 @@
 
     <div class="toolbar">
         <span></span>
-        <a th:href="@{/boards/write}" class="btn">글쓰기</a>
+        <!-- 글쓰기는 로그인한 사용자에게만 -->
+        <a th:if="${session.loginMember != null}" th:href="@{/boards/write}" class="btn">글쓰기</a>
     </div>
 
     <table class="board-list">
@@ -26,11 +27,9 @@
         </tr>
         </thead>
         <tbody>
-        <!-- 글이 하나도 없을 때 -->
         <tr th:if="${boards.isEmpty()}">
             <td class="center" colspan="4">등록된 글이 없습니다.</td>
         </tr>
-        <!-- 글 목록 반복 출력 -->
         <tr th:each="board : ${boards}">
             <td class="center" th:text="${board.id}">1</td>
             <td>

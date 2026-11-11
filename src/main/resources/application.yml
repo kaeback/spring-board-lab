@@ -7,3 +7,8 @@ spring:
 
 server:
   port: 8080
+  servlet:
+    session:
+      # 세션 ID를 쿠키로만 주고받는다. (기본값은 쿠키+URL이라, 첫 요청의 리다이렉트 URL에
+      # ;jsessionid=... 가 붙어 주소창·로그에 세션 ID가 노출된다)
+      tracking-modes: cookie

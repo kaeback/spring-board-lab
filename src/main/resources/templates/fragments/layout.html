@@ -5,12 +5,22 @@
 <!--
   공통 상단바 조각(fragment).
   각 페이지에서 <header th:replace="~{fragments/layout :: topbar}"></header> 로 끼워 넣는다.
-  상단바를 고칠 일이 생기면 이 파일 하나만 고치면 된다.
+  세션(${session.loginMember})에 따라 로그인/로그아웃을 다르게 보여준다.
 -->
 <header th:fragment="topbar" class="topbar">
     <a class="brand" th:href="@{/boards}">게시판</a>
     <div class="menu">
         <a th:href="@{/boards}">목록</a>
+        <span th:if="${session.loginMember != null}">
+            <b th:text="${session.loginMember.name}">사용자</b>님
+            <form th:action="@{/logout}" method="post" style="display:inline">
+                <button type="submit" class="btn gray" style="padding:4px 10px">로그아웃</button>
+            </form>
+        </span>
+        <span th:if="${session.loginMember == null}">
+            <a th:href="@{/login}">로그인</a>
+            <a th:href="@{/join}">회원가입</a>
+        </span>
     </div>
 </header>
 

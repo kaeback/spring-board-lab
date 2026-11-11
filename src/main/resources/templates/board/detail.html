@@ -22,11 +22,15 @@
 
         <div class="button-row">
             <a th:href="@{/boards}" class="btn gray">목록</a>
-            <a th:href="@{/boards/{id}/edit(id=${board.id})}" class="btn">수정</a>
-            <form th:action="@{/boards/{id}/delete(id=${board.id})}" method="post"
-                  style="display:inline" onsubmit="return confirm('정말 삭제하시겠습니까?');">
-                <button type="submit" class="btn danger">삭제</button>
-            </form>
+
+            <!-- 작성자 본인에게만 수정/삭제 노출 -->
+            <span th:if="${session.loginMember != null and session.loginMember.loginId == board.writer}">
+                <a th:href="@{/boards/{id}/edit(id=${board.id})}" class="btn">수정</a>
+                <form th:action="@{/boards/{id}/delete(id=${board.id})}" method="post"
+                      style="display:inline" onsubmit="return confirm('정말 삭제하시겠습니까?');">
+                    <button type="submit" class="btn danger">삭제</button>
+                </form>
+            </span>
         </div>
     </div>
 </div>
