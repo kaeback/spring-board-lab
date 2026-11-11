@@ -3,7 +3,7 @@ package net.datasa.board.service;
 import lombok.RequiredArgsConstructor;
 import net.datasa.board.domain.Member;
 import net.datasa.board.dto.MemberJoinForm;
-import net.datasa.board.repository.MemberMemoryRepository;
+import net.datasa.board.repository.MemberRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -15,7 +15,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class MemberService {
 
-    private final MemberMemoryRepository memberRepository;
+    private final MemberRepository memberRepository;
 
     public boolean isDuplicateLoginId(String loginId) {
         return memberRepository.findByLoginId(loginId).isPresent();

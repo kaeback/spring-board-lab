@@ -3,8 +3,10 @@ package net.datasa.board.service;
 import lombok.RequiredArgsConstructor;
 import net.datasa.board.domain.Board;
 import net.datasa.board.dto.BoardForm;
-import net.datasa.board.repository.BoardMemoryRepository;
+import net.datasa.board.repository.BoardRepository;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -18,11 +20,11 @@ import java.util.List;
 @RequiredArgsConstructor
 public class BoardService {
 
-    private final BoardMemoryRepository boardRepository;
+    private final BoardRepository boardRepository;
 
     /** 전체 글 목록 (최신순) */
     public List<Board> getList() {
-        return boardRepository.findAll();
+        return boardRepository.findAll(Sort.by(Sort.Direction.DESC, "id"));
     }
 
     /** 글 작성 — 작성자(writer)는 로그인한 사용자의 loginId를 받는다 */
@@ -36,7 +38,14 @@ public class BoardService {
         return boardRepository.save(board);
     }
 
-    /** 글 단건 조회 (조회수 증가) — 상세 화면용 */
+    /**
+     * 글 단건 조회 (조회수 증가) — 상세 화면용.
+     *
+     * JPA는 트랜잭션 안에서만 변경 감지(dirty checking)로 UPDATE를 반영한다.
+     * 메모리 저장소였을 때는 객체 참조를 공유해 별도 save 없이도 반영됐지만,
+     * JPA에서는 {@code @Transactional}이 없으면 조회수 증가가 DB에 반영되지 않는다.
+     */
+    @Transactional
     public Board getDetailAndIncreaseView(Long id) {
         Board board = getById(id);
         board.setViewCount(board.getViewCount() + 1);
@@ -49,7 +58,8 @@ public class BoardService {
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 글입니다. id=" + id));
     }
 
-    /** 글 수정 — 제목·내용만 바꾸고 작성자는 유지한다 */
+    /** 글 수정 — 제목·내용만 바꾸고 작성자는 유지한다 (변경 감지로 UPDATE) */
+    @Transactional
     public void update(Long id, BoardForm form) {
         Board board = getById(id);
         board.setTitle(form.getTitle());
