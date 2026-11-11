@@ -14,11 +14,15 @@
         <form th:action="@{/boards/{id}/edit(id=${boardId})}" th:object="${boardForm}" method="post">
             <div class="form-group">
                 <label for="title">제목</label>
-                <input type="text" id="title" th:field="*{title}">
+                <input type="text" id="title" th:field="*{title}"
+                       th:classappend="${#fields.hasErrors('title')} ? 'field-error'">
+                <div class="error" th:if="${#fields.hasErrors('title')}" th:errors="*{title}"></div>
             </div>
             <div class="form-group">
                 <label for="content">내용</label>
-                <textarea id="content" th:field="*{content}"></textarea>
+                <textarea id="content" th:field="*{content}"
+                          th:classappend="${#fields.hasErrors('content')} ? 'field-error'"></textarea>
+                <div class="error" th:if="${#fields.hasErrors('content')}" th:errors="*{content}"></div>
             </div>
             <button type="submit" class="btn">수정</button>
             <a th:href="@{/boards/{id}(id=${boardId})}" class="btn gray">취소</a>

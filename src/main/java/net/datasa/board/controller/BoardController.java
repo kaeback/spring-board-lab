@@ -1,6 +1,7 @@
 package net.datasa.board.controller;
 
 import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import net.datasa.board.domain.Board;
 import net.datasa.board.domain.Member;
@@ -9,6 +10,7 @@ import net.datasa.board.service.BoardService;
 import net.datasa.board.web.SessionConst;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -16,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
  *
  * step2: 작성·수정·삭제는 로그인이 필요하다. 아직 인터셉터가 없으므로
  * 각 메서드에서 세션을 <b>직접 확인</b>한다. (step5에서 이 반복을 인터셉터로 뽑아낸다.)
+ * step3부터 입력값은 @Valid + BindingResult로 검증한다.
  */
 @Controller
 @RequiredArgsConstructor
@@ -48,10 +51,15 @@ public class BoardController {
 
     /** 글쓰기 처리 (로그인 필요) */
     @PostMapping("/write")
-    public String write(@ModelAttribute("boardForm") BoardForm form, HttpSession session) {
+    public String write(@Valid @ModelAttribute("boardForm") BoardForm form,
+                        BindingResult bindingResult,
+                        HttpSession session) {
         Member login = loginMember(session);
         if (login == null) {
             return "redirect:/login";
+        }
+        if (bindingResult.hasErrors()) {
+            return "board/write";
         }
         Board board = boardService.write(form, login.getLoginId());
         return "redirect:/boards/" + board.getId();
@@ -85,13 +93,21 @@ public class BoardController {
 
     /** 글 수정 처리 (작성자 본인만) */
     @PostMapping("/{id}/edit")
-    public String edit(@PathVariable Long id, @ModelAttribute("boardForm") BoardForm form, HttpSession session) {
+    public String edit(@PathVariable Long id,
+                       @Valid @ModelAttribute("boardForm") BoardForm form,
+                       BindingResult bindingResult,
+                       HttpSession session,
+                       Model model) {
         Member login = loginMember(session);
         if (login == null) {
             return "redirect:/login";
         }
         if (!boardService.isOwner(id, login.getLoginId())) {
             return "redirect:/boards/" + id;
+        }
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("boardId", id);
+            return "board/edit";
         }
         boardService.update(id, form);
         return "redirect:/boards/" + id;
