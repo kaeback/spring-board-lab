@@ -4,18 +4,21 @@ import lombok.RequiredArgsConstructor;
 import net.datasa.board.domain.Member;
 import net.datasa.board.dto.MemberJoinForm;
 import net.datasa.board.repository.MemberRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
-
 /**
- * 회원 가입·로그인 검증 로직.
+ * 회원 가입 로직.
+ *
+ * step9부터 로그인 검증은 Spring Security가 담당하므로 login() 메서드는 사라졌다.
+ * 가입 시 비밀번호는 PasswordEncoder로 암호화해 저장한다.
  */
 @Service
 @RequiredArgsConstructor
 public class MemberService {
 
     private final MemberRepository memberRepository;
+    private final PasswordEncoder passwordEncoder;
 
     public boolean isDuplicateLoginId(String loginId) {
         return memberRepository.findByLoginId(loginId).isPresent();
@@ -24,14 +27,9 @@ public class MemberService {
     public void join(MemberJoinForm form) {
         Member member = new Member();
         member.setLoginId(form.getLoginId());
-        member.setPassword(form.getPassword());
+        member.setPassword(passwordEncoder.encode(form.getPassword()));  // BCrypt 암호화
         member.setName(form.getName());
+        member.setRole("ROLE_USER");
         memberRepository.save(member);
-    }
-
-    /** 아이디·비밀번호가 맞으면 회원을, 아니면 빈 Optional을 반환한다. */
-    public Optional<Member> login(String loginId, String password) {
-        return memberRepository.findByLoginId(loginId)
-                .filter(member -> member.getPassword().equals(password));
     }
 }

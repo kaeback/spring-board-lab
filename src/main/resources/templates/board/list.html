@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
     <title>게시판</title>
@@ -13,7 +14,7 @@
 
     <div class="toolbar">
         <span></span>
-        <a th:if="${session.loginMember != null}" th:href="@{/boards/write}" class="btn">글쓰기</a>
+        <a sec:authorize="isAuthenticated()" th:href="@{/boards/write}" class="btn">글쓰기</a>
     </div>
 
     <table class="board-list">

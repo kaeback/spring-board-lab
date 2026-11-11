@@ -11,25 +11,22 @@
 <div class="container">
     <h1>로그인</h1>
     <div class="card">
-        <form th:action="@{/login}" th:object="${loginForm}" method="post">
-            <!-- 인터셉터·컨트롤러가 붙여 준 ?redirectURL=... 을 POST로 넘긴다 (로그인 후 원래 화면으로) -->
+        <!-- Spring Security가 처리한다: POST /login (CSRF는 이 실습에서 disable했다) -->
+        <form th:action="@{/login}" method="post">
+            <!-- 상세 화면의 "로그인" 링크가 붙여 준 ?redirectURL=... 을 함께 보낸다 (SecurityConfig.loginSuccessHandler) -->
             <input type="hidden" name="redirectURL" th:if="${param.redirectURL != null}" th:value="${param.redirectURL}">
-            <!-- 폼 전체 에러(아이디/비밀번호 불일치) -->
-            <div class="error" th:if="${#fields.hasGlobalErrors()}">
-                <p th:each="err : ${#fields.globalErrors()}" th:text="${err}">에러</p>
-            </div>
+            <!-- 인증 실패 시 ?error 로 돌아온다 -->
+            <div class="error" th:if="${param.error}">아이디 또는 비밀번호가 올바르지 않습니다</div>
+            <!-- 로그아웃 직후 안내 -->
+            <p th:if="${param.logout}" style="color:#3b5bdb; font-size:14px">로그아웃 되었습니다.</p>
 
             <div class="form-group">
                 <label for="loginId">아이디</label>
-                <input type="text" id="loginId" th:field="*{loginId}"
-                       th:classappend="${#fields.hasErrors('loginId')} ? 'field-error'">
-                <div class="error" th:if="${#fields.hasErrors('loginId')}" th:errors="*{loginId}"></div>
+                <input type="text" id="loginId" name="loginId">
             </div>
             <div class="form-group">
                 <label for="password">비밀번호</label>
-                <input type="password" id="password" th:field="*{password}"
-                       th:classappend="${#fields.hasErrors('password')} ? 'field-error'">
-                <div class="error" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></div>
+                <input type="password" id="password" name="password">
             </div>
             <button type="submit" class="btn">로그인</button>
             <a th:href="@{/join}" class="btn gray">회원가입</a>
