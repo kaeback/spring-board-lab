@@ -2,6 +2,7 @@ package net.datasa.board.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import net.datasa.board.domain.Member;
 import net.datasa.board.dto.LoginForm;
@@ -10,6 +11,7 @@ import net.datasa.board.service.MemberService;
 import net.datasa.board.web.SessionConst;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,7 +23,7 @@ import java.util.Optional;
  * 회원가입 · 로그인 · 로그아웃 컨트롤러.
  *
  * step2는 Spring Security 없이 <b>세션(HttpSession)</b>으로 로그인 상태를 직접 관리한다.
- * 입력값 검증은 아직 없다. (검증은 step3에서 추가한다.)
+ * step3부터 입력값은 @Valid + BindingResult로 검증한다.
  */
 @Controller
 @RequiredArgsConstructor
@@ -38,9 +40,12 @@ public class MemberController {
     }
 
     @PostMapping("/join")
-    public String join(@ModelAttribute("joinForm") MemberJoinForm joinForm, Model model) {
+    public String join(@Valid @ModelAttribute("joinForm") MemberJoinForm joinForm,
+                       BindingResult bindingResult) {
         if (memberService.isDuplicateLoginId(joinForm.getLoginId())) {
-            model.addAttribute("error", "이미 사용 중인 아이디입니다");
+            bindingResult.rejectValue("loginId", "duplicate", "이미 사용 중인 아이디입니다");
+        }
+        if (bindingResult.hasErrors()) {
             return "member/join";
         }
         memberService.join(joinForm);
@@ -56,13 +61,18 @@ public class MemberController {
     }
 
     @PostMapping("/login")
-    public String login(@ModelAttribute("loginForm") LoginForm loginForm,
+    public String login(@Valid @ModelAttribute("loginForm") LoginForm loginForm,
+                        BindingResult bindingResult,
                         @RequestParam(defaultValue = "/boards") String redirectURL,
-                        HttpServletRequest request,
-                        Model model) {
+                        HttpServletRequest request) {
+        if (bindingResult.hasErrors()) {
+            return "member/login";
+        }
+
         Optional<Member> loginMember = memberService.login(loginForm.getLoginId(), loginForm.getPassword());
         if (loginMember.isEmpty()) {
-            model.addAttribute("error", "아이디 또는 비밀번호가 올바르지 않습니다");
+            // 특정 필드가 아닌 폼 전체 에러(global error)로 처리
+            bindingResult.reject("loginFail", "아이디 또는 비밀번호가 올바르지 않습니다");
             return "member/login";
         }
 
