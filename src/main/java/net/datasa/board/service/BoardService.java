@@ -3,6 +3,7 @@ package net.datasa.board.service;
 import lombok.RequiredArgsConstructor;
 import net.datasa.board.domain.Board;
 import net.datasa.board.dto.BoardForm;
+import net.datasa.board.exception.BoardNotFoundException;
 import net.datasa.board.repository.BoardRepository;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -55,7 +56,7 @@ public class BoardService {
     /** 글 단건 조회 (조회수 증가 없음) — 수정 화면 등 내부용 */
     public Board getById(Long id) {
         return boardRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 글입니다. id=" + id));
+                .orElseThrow(() -> new BoardNotFoundException(id));   // step5: 404로 응답
     }
 
     /** 글 수정 — 제목·내용만 바꾸고 작성자는 유지한다 (변경 감지로 UPDATE) */
