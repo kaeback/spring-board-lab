@@ -35,7 +35,7 @@
             <td>
                 <a th:href="@{/boards/{id}(id=${board.id})}" th:text="${board.title}">제목</a>
             </td>
-            <td th:text="${board.writer}">작성자</td>
+            <td th:text="${board.writer.name}">작성자</td>
             <td class="center" th:text="${board.viewCount}">0</td>
         </tr>
         </tbody>
