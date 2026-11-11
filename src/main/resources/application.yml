@@ -1,0 +1,9 @@
+spring:
+  application:
+    name: spring-board
+  # DB 연결(datasource)은 step4에서 추가한다.
+  thymeleaf:
+    cache: false        # 개발 중 템플릿 변경을 바로 반영 (재시작 없이)
+
+server:
+  port: 8080
