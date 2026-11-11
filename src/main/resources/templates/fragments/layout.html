@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--
+  공통 상단바 조각(fragment).
+  각 페이지에서 <header th:replace="~{fragments/layout :: topbar}"></header> 로 끼워 넣는다.
+  상단바를 고칠 일이 생기면 이 파일 하나만 고치면 된다.
+-->
+<header th:fragment="topbar" class="topbar">
+    <a class="brand" th:href="@{/boards}">게시판</a>
+    <div class="menu">
+        <a th:href="@{/boards}">목록</a>
+    </div>
+</header>
+
+</body>
+</html>
