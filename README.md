@@ -1,4 +1,4 @@
-# 게시판 단계별 실습 — step7: 댓글 REST API
+# 게시판 단계별 실습 — step8: 테스트 코드
 
 스프링 게시판을 **한 단계에 한 기능씩** 쌓아 올리며 만드는 실습입니다.
 각 단계는 별도 브랜치로 제공되며, 이전 단계 위에 기능을 누적합니다.
@@ -14,32 +14,44 @@
 | step4-jpa | JPA + PostgreSQL 연동 | `@Entity`, `JpaRepository`, 트랜잭션 |
 | step5-filter-interceptor | 필터·인터셉터·예외 처리 | 공통 전처리, 로그인 체크, 오류 페이지 |
 | step6-file-paging | 파일 업/다운로드 + 페이징 | 파일 처리, `Pageable` |
-| **step7-rest** ← 현재 | 댓글 REST API | `@RestController`, JSON, `fetch` |
-| step8-test | 테스트 코드 | JUnit 6, Mockito, `@DataJpaTest`, `@WebMvcTest`, `@SpringBootTest` |
+| step7-rest | 댓글 REST API | `@RestController`, JSON, `fetch` |
+| **step8-test** ← 현재 | 테스트 코드 | JUnit 6, Mockito, `@DataJpaTest`, `@WebMvcTest`, `@SpringBootTest` |
 | step9-security | Spring Security로 교체 | `SecurityFilterChain`, 인증/인가, `@WithMockUser` |
 
 > **기술 스택**: Spring Boot 4.1 (Spring Framework 7 · Spring Security 7) · Java 21 · Gradle 9 · Thymeleaf · Spring Data JPA (Hibernate 7) · PostgreSQL 17
 
 > AI 요약 기능까지 들어간 완성본은 `master` 브랜치에 있습니다.
 
-## step7에서 하는 것
+## step8에서 하는 것
 
-- **댓글 REST API** — 화면(HTML)이 아니라 JSON을 주고받는 `@RestController` (`api/CommentApiController`)
+기능은 step7과 같고, **테스트 코드**를 더한다. 교안 [테스트] 장의 네 가지 테스트 방식을 이 게시판에 적용한다.
 
-  | 메서드 | 주소 | 하는 일 | 응답 |
-  |---|---|---|---|
-  | GET | `/api/boards/{boardId}/comments` | 댓글 목록 | 200 + JSON 배열 |
-  | POST | `/api/boards/{boardId}/comments` | 댓글 등록 (로그인 필요) | 201 / 400 / 401 |
-  | DELETE | `/api/comments/{commentId}` | 댓글 삭제 (본인만) | 204 / 401 / 403 / 404 |
+| 테스트 | 방식 | 무엇을 검증하나 |
+|---|---|---|
+| `BoardServiceTest` | **단위 테스트** — `@ExtendWith(MockitoExtension.class)` + `@Mock`/`@InjectMocks` | 스프링 없이 `BoardService` 로직만: 글쓰기 값 채우기, 조회수 증가, 없는 글 → `BoardNotFoundException`, 작성자 확인 |
+| `BoardRepositoryTest` | **JPA 슬라이스** — `@DataJpaTest` (내장 H2, 테스트마다 롤백) | `Pageable` 페이징·정렬, IDENTITY id 부여 |
+| `CommentApiControllerTest` | **웹 슬라이스(API)** — `@WebMvcTest` + `jsonPath` | 댓글 목록 JSON, 401·201·400·403·204 상태 코드 |
+| `BoardControllerTest` | **웹 슬라이스** — `@WebMvcTest` + `MockMvc` + `@MockitoBean` | 목록 200, 없는 글 404, 비로그인 글쓰기 → 인터셉터 리다이렉트, 검증 실패 시 폼 재표시 |
+| `BoardFlowIntegrationTest` | **통합 테스트** — `@SpringBootTest` + `@AutoConfigureMockMvc` + `@AutoConfigureTestDatabase` | 로그인 → 글쓰기 → 상세까지 실제 빈과 DB로 |
 
-- 요청 본문은 `@RequestBody CommentRequest`(record + `@Valid`), 응답은 엔티티 대신 `CommentResponse` DTO
-- 상태 코드는 `ResponseEntity`로 직접 정한다 (201 Created + `Location`, 204 No Content, 401, 403)
-- 오류는 `ApiExceptionAdvice`(`@RestControllerAdvice(basePackages = "net.datasa.board.api")`)가 `{"code","message"}` JSON으로 바꾼다 — 화면 쪽 오류 페이지에는 영향 없음
-- 상세 화면(`board/detail.html`)은 자바스크립트 `fetch()`로 API를 불러 댓글을 그리고, 등록·삭제 후 목록만 다시 그린다 (페이지 새로고침 없음)
-- 글을 지우면 그 글의 댓글도 함께 지운다 (`CommentRepository.deleteByBoardId`)
+- **Boot 4 포인트**
+    - 테스트 스타터는 기술별: `spring-boot-starter-webmvc-test`, `spring-boot-starter-data-jpa-test`
+    - `@WebMvcTest`, `@DataJpaTest`, `@AutoConfigureMockMvc`, `@AutoConfigureTestDatabase`의 **패키지가 바뀌었다** (테스트 코드의 import 참고)
+    - `@MockBean`은 제거 → **`@MockitoBean`**
+    - `@SpringBootTest`만으로는 `MockMvc`가 생기지 않는다 → **`@AutoConfigureMockMvc`**
+- 테스트는 **PostgreSQL 없이** 돈다. `testRuntimeOnly 'com.h2database:h2'`를 추가해, `@DataJpaTest`·`@AutoConfigureTestDatabase`가 내장 H2로 바꿔 실행한다 (H2는 테스트 클래스패스에만 들어간다)
+- `build.gradle`에서 Mockito를 **JVM 에이전트**(`-javaagent`)로 등록한다. JDK 21+에서 "Mockito is currently self-attaching…" / "A Java agent has been loaded dynamically" 경고가 사라진다
+
+### 테스트 실행
+
+```bash
+./gradlew test
+```
+
+결과 보고서: `build/reports/tests/test/index.html`
 
 ### 아직 없는 것 (다음 단계에서 추가)
-테스트 · 시큐리티 · AI
+시큐리티 · AI
 
 ## 실행 전 준비 — 로컬 PostgreSQL
 
@@ -76,9 +88,6 @@ net.datasa.board
 │   ├─ BoardController         게시판 요청 처리(CRUD) + 페이징 + 파일 업/다운로드
 │   ├─ MemberController        회원가입·로그인·로그아웃 + 검증
 │   └─ HomeController          "/" → 게시판으로 이동
-├─ api
-│   ├─ CommentApiController    댓글 REST API (JSON)
-│   └─ ApiExceptionAdvice      API 전용 예외 → JSON 오류 응답
 ├─ service
 │   ├─ BoardService            게시판 비즈니스 로직 (Pageable, 파일 첨부, 트랜잭션)
 │   ├─ MemberService           회원 가입·로그인 검증
@@ -104,4 +113,17 @@ net.datasa.board
 └─ config
     ├─ WebConfig                필터·인터셉터 등록
     └─ DataInitializer          샘플 회원·데이터 주입 (중복 방지, 페이징용 12건 시드)
+```
+
+### 테스트 코드 (`src/test/java`)
+
+```
+net.datasa.board
+├─ BoardFlowIntegrationTest     @SpringBootTest 통합 테스트 (로그인 → 글쓰기 → 상세)
+├─ controller
+│   └─ BoardControllerTest      @WebMvcTest + MockMvc + @MockitoBean
+├─ repository
+│   └─ BoardRepositoryTest      @DataJpaTest (H2, 페이징)
+└─ service
+    └─ BoardServiceTest         Mockito 단위 테스트
 ```
