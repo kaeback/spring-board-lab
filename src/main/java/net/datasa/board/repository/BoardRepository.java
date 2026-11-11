@@ -1,10 +1,11 @@
 package net.datasa.board.repository;
 
 import net.datasa.board.domain.Board;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import java.util.List;
 import java.util.Optional;
 
 /**
@@ -19,9 +20,14 @@ import java.util.Optional;
  */
 public interface BoardRepository extends JpaRepository<Board, Long> {
 
-    /** 목록 — 최신순(id 내림차순), 작성자를 함께 조회 */
+    /**
+     * 목록(페이징) — 작성자를 함께 조회.
+     * JpaRepository가 이미 제공하는 findAll(Pageable)을 재정의(override)해 @EntityGraph만 덧붙였다.
+     * 정렬(최신순)은 컨트롤러의 Pageable에 실려 온다.
+     */
+    @Override
     @EntityGraph(attributePaths = "writer")
-    List<Board> findAllByOrderByIdDesc();
+    Page<Board> findAll(Pageable pageable);
 
     /** 상세 — 작성자를 함께 조회 */
     @EntityGraph(attributePaths = "writer")
