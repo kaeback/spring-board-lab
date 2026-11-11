@@ -5,6 +5,7 @@ import net.datasa.board.domain.Board;
 import net.datasa.board.dto.BoardForm;
 import net.datasa.board.exception.BoardNotFoundException;
 import net.datasa.board.repository.BoardRepository;
+import net.datasa.board.repository.CommentRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,7 @@ public class BoardService {
 
     private final BoardRepository boardRepository;
     private final FileService fileService;
+    private final CommentRepository commentRepository;   // step7: 글 삭제 시 댓글도 삭제
 
     /**
      * 페이징된 글 목록.
@@ -76,9 +78,11 @@ public class BoardService {
         }
     }
 
-    /** 글 삭제 (첨부파일도 함께 삭제) */
+    /** 글 삭제 (첨부파일·댓글도 함께 삭제) */
+    @Transactional
     public void delete(Long id) {
         boardRepository.findById(id).ifPresent(board -> fileService.delete(board.getStoredFileName()));
+        commentRepository.deleteByBoardId(id);      // step7: 댓글이 글을 참조하므로 먼저 지운다
         boardRepository.deleteById(id);
     }
 

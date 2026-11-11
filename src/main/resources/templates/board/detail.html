@@ -40,6 +40,90 @@
             </span>
         </div>
     </div>
+
+    <!-- step7: 댓글 — 화면은 한 번만 그리고, 댓글은 자바스크립트가 REST API로 주고받는다 -->
+    <div class="card comment-section">
+        <div class="original-label">댓글 <span id="comment-count">0</span></div>
+        <div id="comment-list"></div>
+
+        <div class="comment-form" th:if="${session.loginMember != null}">
+            <textarea id="comment-content" placeholder="댓글을 입력하세요 (300자 이내)"></textarea>
+            <button type="button" class="btn" onclick="addComment()">등록</button>
+        </div>
+        <p class="loading-text" th:if="${session.loginMember == null}">
+            <a th:href="@{/login(redirectURL=${'/boards/' + board.id})}">로그인</a>하면 댓글을 쓸 수 있습니다.
+        </p>
+    </div>
 </div>
+
+<script th:inline="javascript">
+    const boardId = /*[[${board.id}]]*/ 1;
+    const loginId = /*[[${session.loginMember?.loginId}]]*/ null;
+
+    // 댓글 목록: GET → JSON 배열을 받아 화면에 그린다
+    async function loadComments() {
+        const res = await fetch(`/api/boards/${boardId}/comments`);
+        const comments = await res.json();
+        document.getElementById('comment-count').textContent = comments.length;
+        const list = document.getElementById('comment-list');
+        list.innerHTML = '';
+        for (const c of comments) {
+            const item = document.createElement('div');
+            item.className = 'comment-item';
+            const head = document.createElement('div');
+            const writer = document.createElement('span');
+            writer.className = 'writer';
+            writer.textContent = c.writer;            // textContent: 글자 그대로 (태그로 해석 안 함 → XSS 방지)
+            const date = document.createElement('span');
+            date.className = 'date';
+            date.textContent = c.createdAt;
+            head.append(writer, date);
+            if (c.writer === loginId) {               // 본인 댓글에만 삭제 버튼
+                const del = document.createElement('button');
+                del.className = 'btn danger';
+                del.style.cssText = 'padding:2px 8px; margin-left:8px; font-size:12px';
+                del.textContent = '삭제';
+                del.onclick = () => deleteComment(c.id);
+                head.append(del);
+            }
+            const text = document.createElement('div');
+            text.className = 'text';
+            text.textContent = c.content;
+            item.append(head, text);
+            list.append(item);
+        }
+    }
+
+    // 댓글 등록: POST + JSON 본문 → 201이면 목록 다시 그리기
+    async function addComment() {
+        const input = document.getElementById('comment-content');
+        const res = await fetch(`/api/boards/${boardId}/comments`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({content: input.value})
+        });
+        if (res.status === 201) {
+            input.value = '';
+            loadComments();
+        } else {
+            const error = await res.json();           // {"code":..., "message":...}
+            alert(error.message);
+        }
+    }
+
+    // 댓글 삭제: DELETE → 204면 목록 다시 그리기
+    async function deleteComment(id) {
+        if (!confirm('댓글을 삭제할까요?')) return;
+        const res = await fetch(`/api/comments/${id}`, {method: 'DELETE'});
+        if (res.status === 204) {
+            loadComments();
+        } else {
+            const error = await res.json();
+            alert(error.message);
+        }
+    }
+
+    loadComments();
+</script>
 </body>
 </html>

@@ -3,9 +3,12 @@ package net.datasa.board.config;
 import lombok.RequiredArgsConstructor;
 import net.datasa.board.dto.BoardForm;
 import net.datasa.board.dto.MemberJoinForm;
+import net.datasa.board.domain.Board;
 import net.datasa.board.repository.BoardRepository;
+import net.datasa.board.repository.CommentRepository;
 import net.datasa.board.repository.MemberRepository;
 import net.datasa.board.service.BoardService;
+import net.datasa.board.service.CommentService;
 import net.datasa.board.service.MemberService;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
@@ -25,6 +28,8 @@ public class DataInitializer implements CommandLineRunner {
     private final BoardRepository boardRepository;
     private final MemberService memberService;
     private final BoardService boardService;
+    private final CommentRepository commentRepository;
+    private final CommentService commentService;
 
     @Override
     public void run(String... args) {
@@ -44,6 +49,14 @@ public class DataInitializer implements CommandLineRunner {
                 };
                 write(i + "번째 글입니다", "본문 내용 " + i + " 입니다.", writer);
             }
+        }
+
+        // step7: 가장 최근 글에 샘플 댓글 두 개
+        if (commentRepository.count() == 0) {
+            boardRepository.findTopByOrderByIdDesc().ifPresent((Board board) -> {
+                commentService.write(board.getId(), "첫 댓글입니다.", "kim");
+                commentService.write(board.getId(), "잘 읽었습니다.", "admin");
+            });
         }
     }
 

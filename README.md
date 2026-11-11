@@ -1,4 +1,4 @@
-# 게시판 단계별 실습 — step6: 첨부파일 업/다운로드 + 페이징
+# 게시판 단계별 실습 — step7: 댓글 REST API
 
 스프링 게시판을 **한 단계에 한 기능씩** 쌓아 올리며 만드는 실습입니다.
 각 단계는 별도 브랜치로 제공되며, 이전 단계 위에 기능을 누적합니다.
@@ -13,8 +13,8 @@
 | step3-validation | 입력값 검증 | `@Valid`, `BindingResult`, `th:errors` |
 | step4-jpa | JPA + PostgreSQL 연동 | `@Entity`, `JpaRepository`, 트랜잭션 |
 | step5-filter-interceptor | 필터·인터셉터·예외 처리 | 공통 전처리, 로그인 체크, 오류 페이지 |
-| **step6-file-paging** ← 현재 | 파일 업/다운로드 + 페이징 | 파일 처리, `Pageable` |
-| step7-rest | 댓글 REST API | `@RestController`, JSON, `fetch` |
+| step6-file-paging | 파일 업/다운로드 + 페이징 | 파일 처리, `Pageable` |
+| **step7-rest** ← 현재 | 댓글 REST API | `@RestController`, JSON, `fetch` |
 | step8-test | 테스트 코드 | JUnit 6, Mockito, `@DataJpaTest`, `@WebMvcTest`, `@SpringBootTest` |
 | step9-security | Spring Security로 교체 | `SecurityFilterChain`, 인증/인가, `@WithMockUser` |
 
@@ -22,15 +22,24 @@
 
 > AI 요약 기능까지 들어간 완성본은 `master` 브랜치에 있습니다.
 
-## step6에서 하는 것
+## step7에서 하는 것
 
-- **첨부파일 업/다운로드** — 글쓰기·수정 화면에서 파일 1개를 첨부할 수 있고, 상세 화면에서 다운로드할 수 있다. 파일 실체는 디스크(`file.upload-dir`)에, DB에는 원본 파일명/저장 파일명 두 컬럼만 저장한다 (`FileService`)
-- **페이징** — 목록 조회를 직접 계산하던 방식(subList 등) 대신 **Spring Data JPA의 `Pageable`/`Page<Board>`**를 사용한다. `BoardController.list()`가 `@PageableDefault(size = 5, sort = "id", direction = DESC) Pageable`을 받아 그대로 `boardRepository.findAll(pageable)`에 넘긴다
-- `Page<T>`는 `content`/`number`/`size`/`totalElements`/`totalPages`/`first`/`last`를 그대로 제공하므로, 페이지네이션 화면(`fragments/layout.html`의 `pagination` 프래그먼트)은 별도 DTO 없이 그대로 재사용된다
-- `DataInitializer`가 페이징 효과를 볼 수 있도록 샘플 글 12개를 시드한다 (이미 데이터가 있으면 건너뜀)
+- **댓글 REST API** — 화면(HTML)이 아니라 JSON을 주고받는 `@RestController` (`api/CommentApiController`)
+
+  | 메서드 | 주소 | 하는 일 | 응답 |
+  |---|---|---|---|
+  | GET | `/api/boards/{boardId}/comments` | 댓글 목록 | 200 + JSON 배열 |
+  | POST | `/api/boards/{boardId}/comments` | 댓글 등록 (로그인 필요) | 201 / 400 / 401 |
+  | DELETE | `/api/comments/{commentId}` | 댓글 삭제 (본인만) | 204 / 401 / 403 / 404 |
+
+- 요청 본문은 `@RequestBody CommentRequest`(record + `@Valid`), 응답은 엔티티 대신 `CommentResponse` DTO
+- 상태 코드는 `ResponseEntity`로 직접 정한다 (201 Created + `Location`, 204 No Content, 401, 403)
+- 오류는 `ApiExceptionAdvice`(`@RestControllerAdvice(basePackages = "net.datasa.board.api")`)가 `{"code","message"}` JSON으로 바꾼다 — 화면 쪽 오류 페이지에는 영향 없음
+- 상세 화면(`board/detail.html`)은 자바스크립트 `fetch()`로 API를 불러 댓글을 그리고, 등록·삭제 후 목록만 다시 그린다 (페이지 새로고침 없음)
+- 글을 지우면 그 글의 댓글도 함께 지운다 (`CommentRepository.deleteByBoardId`)
 
 ### 아직 없는 것 (다음 단계에서 추가)
-댓글 API · 테스트 · 시큐리티 · AI
+테스트 · 시큐리티 · AI
 
 ## 실행 전 준비 — 로컬 PostgreSQL
 
@@ -67,6 +76,9 @@ net.datasa.board
 │   ├─ BoardController         게시판 요청 처리(CRUD) + 페이징 + 파일 업/다운로드
 │   ├─ MemberController        회원가입·로그인·로그아웃 + 검증
 │   └─ HomeController          "/" → 게시판으로 이동
+├─ api
+│   ├─ CommentApiController    댓글 REST API (JSON)
+│   └─ ApiExceptionAdvice      API 전용 예외 → JSON 오류 응답
 ├─ service
 │   ├─ BoardService            게시판 비즈니스 로직 (Pageable, 파일 첨부, 트랜잭션)
 │   ├─ MemberService           회원 가입·로그인 검증
