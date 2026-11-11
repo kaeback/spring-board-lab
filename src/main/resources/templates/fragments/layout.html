@@ -24,5 +24,21 @@
     </div>
 </header>
 
+<!--
+  페이징 조각. 목록에서 <div th:replace="~{fragments/layout :: pagination(${page})}"></div> 로 사용한다.
+  page는 Spring Data의 Page<T> 객체. 페이지 번호는 0부터지만 화면에는 +1 해서 보여준다.
+-->
+<div th:fragment="pagination(page)" class="pagination" th:if="${page.totalPages > 0}">
+    <a th:if="${!page.first}" th:href="@{/boards(page=${page.number - 1})}">이전</a>
+
+    <!-- th:block은 태그 없이 반복만 한다 (span으로 감싸면 .pagination span 스타일이 겹쳐 테두리가 두 번 그려진다) -->
+    <th:block th:each="i : ${#numbers.sequence(0, page.totalPages - 1)}">
+        <span th:if="${i == page.number}" class="active" th:text="${i + 1}">1</span>
+        <a th:unless="${i == page.number}" th:href="@{/boards(page=${i})}" th:text="${i + 1}">1</a>
+    </th:block>
+
+    <a th:if="${!page.last}" th:href="@{/boards(page=${page.number + 1})}">다음</a>
+</div>
+
 </body>
 </html>

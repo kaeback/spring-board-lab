@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 /**
  * 앱이 시작될 때 샘플 회원과 글을 미리 넣어 둔다.
  *
- * step4부터는 DB에 데이터가 남으므로, 이미 데이터가 있으면 다시 넣지 않는다(중복 방지).
+ * 이미 데이터가 있으면 다시 넣지 않는다(중복 방지). 글은 페이징 효과를 볼 수 있도록 넉넉히 시드한다.
  *
  * 로그인 테스트 계정: hong / kim / admin  (비밀번호 모두 1234)
  */
@@ -35,9 +35,15 @@ public class DataInitializer implements CommandLineRunner {
         }
 
         if (boardRepository.count() == 0) {
-            write("첫 번째 글입니다", "메모리 대신 DB(JPA)에 저장되는 게시판에 오신 것을 환영합니다.", "admin");
-            write("두 번째 글입니다", "로그인 후 글쓰기 버튼으로 새 글을 작성해 보세요.", "hong");
-            write("세 번째 글입니다", "본인 글에만 수정·삭제 버튼이 보입니다.", "kim");
+            // 페이징을 확인할 수 있도록 글을 넉넉히 시드한다
+            for (int i = 1; i <= 12; i++) {
+                String writer = switch (i % 3) {
+                    case 0 -> "admin";
+                    case 1 -> "hong";
+                    default -> "kim";
+                };
+                write(i + "번째 글입니다", "본문 내용 " + i + " 입니다.", writer);
+            }
         }
     }
 
@@ -53,6 +59,6 @@ public class DataInitializer implements CommandLineRunner {
         BoardForm form = new BoardForm();
         form.setTitle(title);
         form.setContent(content);
-        boardService.write(form, writerLoginId);
+        boardService.write(form, writerLoginId, null);   // 시드 데이터는 첨부 없음
     }
 }

@@ -5,6 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Transient;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -35,4 +36,14 @@ public class Board {
     private int viewCount;       // 조회수
 
     private LocalDateTime createdAt;  // 작성 시각
+
+    // step6: 첨부파일 (1개)
+    private String originalFileName;  // 사용자가 올린 원래 파일명 (화면 표시용)
+    private String storedFileName;    // 서버에 저장된 실제 파일명 (UUID, 중복 방지)
+
+    /** 첨부파일이 있는지 여부 (Thymeleaf의 board.hasAttachment). DB 컬럼이 아니므로 @Transient. */
+    @Transient
+    public boolean isHasAttachment() {
+        return storedFileName != null;
+    }
 }

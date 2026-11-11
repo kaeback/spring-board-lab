@@ -11,7 +11,8 @@
 <div class="container">
     <h1>글 수정</h1>
     <div class="card">
-        <form th:action="@{/boards/{id}/edit(id=${boardId})}" th:object="${boardForm}" method="post">
+        <form th:action="@{/boards/{id}/edit(id=${board.id})}" th:object="${boardForm}" method="post"
+              enctype="multipart/form-data">
             <div class="form-group">
                 <label for="title">제목</label>
                 <input type="text" id="title" th:field="*{title}"
@@ -24,8 +25,15 @@
                           th:classappend="${#fields.hasErrors('content')} ? 'field-error'"></textarea>
                 <div class="error" th:if="${#fields.hasErrors('content')}" th:errors="*{content}"></div>
             </div>
+            <div class="form-group">
+                <label for="file">첨부파일 (선택, 새 파일을 올리면 교체됩니다)</label>
+                <div th:if="${board.hasAttachment}" style="margin-bottom:6px; font-size:13px; color:#666">
+                    현재 파일: <span th:text="${board.originalFileName}">파일명</span>
+                </div>
+                <input type="file" id="file" name="file">
+            </div>
             <button type="submit" class="btn">수정</button>
-            <a th:href="@{/boards/{id}(id=${boardId})}" class="btn gray">취소</a>
+            <a th:href="@{/boards/{id}(id=${board.id})}" class="btn gray">취소</a>
         </form>
     </div>
 </div>

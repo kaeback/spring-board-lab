@@ -21,6 +21,12 @@ spring:
         format_sql: true
     open-in-view: false    # OSIV 비활성화 — 트랜잭션 경계를 서비스 계층으로 명확히 하기 위해
 
+  # step6: 첨부파일 업로드 크기 제한
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
 server:
   port: 8080
   servlet:
@@ -28,3 +34,7 @@ server:
       # 세션 ID를 쿠키로만 주고받는다. (기본값은 쿠키+URL이라, 첫 요청의 리다이렉트 URL에
       # ;jsessionid=... 가 붙어 주소창·로그에 세션 ID가 노출된다)
       tracking-modes: cookie
+
+# step6: 첨부파일 저장 경로 (프로젝트 루트의 uploads 폴더). 파일 자체는 DB가 아니라 디스크에 저장한다.
+file:
+  upload-dir: ./uploads

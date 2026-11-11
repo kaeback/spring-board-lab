@@ -1,4 +1,4 @@
-# 게시판 단계별 실습 — step5: 필터·인터셉터·예외 처리
+# 게시판 단계별 실습 — step6: 첨부파일 업/다운로드 + 페이징
 
 스프링 게시판을 **한 단계에 한 기능씩** 쌓아 올리며 만드는 실습입니다.
 각 단계는 별도 브랜치로 제공되며, 이전 단계 위에 기능을 누적합니다.
@@ -12,8 +12,8 @@
 | step2-session | 세션 로그인 | `HttpSession`, 로그인 상태 |
 | step3-validation | 입력값 검증 | `@Valid`, `BindingResult`, `th:errors` |
 | step4-jpa | JPA + PostgreSQL 연동 | `@Entity`, `JpaRepository`, 트랜잭션 |
-| **step5-filter-interceptor** ← 현재 | 필터·인터셉터·예외 처리 | 공통 전처리, 로그인 체크, 오류 페이지 |
-| step6-file-paging | 파일 업/다운로드 + 페이징 | 파일 처리, `Pageable` |
+| step5-filter-interceptor | 필터·인터셉터·예외 처리 | 공통 전처리, 로그인 체크, 오류 페이지 |
+| **step6-file-paging** ← 현재 | 파일 업/다운로드 + 페이징 | 파일 처리, `Pageable` |
 | step7-rest | 댓글 REST API | `@RestController`, JSON, `fetch` |
 | step8-test | 테스트 코드 | JUnit 6, Mockito, `@DataJpaTest`, `@WebMvcTest`, `@SpringBootTest` |
 | step9-security | Spring Security로 교체 | `SecurityFilterChain`, 인증/인가, `@WithMockUser` |
@@ -22,16 +22,15 @@
 
 > AI 요약 기능까지 들어간 완성본은 `master` 브랜치에 있습니다.
 
-## step5에서 하는 것
+## step6에서 하는 것
 
-- **`LogFilter`** — 모든 요청의 시작/끝을 로그로 남기는 서블릿 필터 (디스패처서블릿보다 앞단에서 동작)
-- **`LoginCheckInterceptor`** — `/boards/write`, `/boards/*/edit`, `/boards/*/delete` 요청에서 로그인 여부를 검사하는 인터셉터 (디스패처서블릿과 컨트롤러 사이에서 동작)
-- 지금까지 각 컨트롤러 메서드마다 반복하던 "세션 확인 후 `/login`으로 redirect" 코드를 `WebConfig`에 등록한 인터셉터 한 곳으로 모았다
-- 컨트롤러에는 여전히 **작성자 본인 여부**(`isOwner`) 검사가 남는다 — 이건 "로그인했는지"가 아니라 "이 글의 주인인지"를 따지는 것이라 인터셉터가 대신할 수 없다
-- **예외 처리와 오류 페이지** — 없는 글을 요청하면 `BoardNotFoundException`(`@ResponseStatus(NOT_FOUND)`)을 던지고, 스프링 부트 `BasicErrorController`가 `templates/error/404.html`을 보여 준다. 그 밖의 서버 오류는 `error/5xx.html` (이전 단계까지는 500 Whitelabel 화면)
+- **첨부파일 업/다운로드** — 글쓰기·수정 화면에서 파일 1개를 첨부할 수 있고, 상세 화면에서 다운로드할 수 있다. 파일 실체는 디스크(`file.upload-dir`)에, DB에는 원본 파일명/저장 파일명 두 컬럼만 저장한다 (`FileService`)
+- **페이징** — 목록 조회를 직접 계산하던 방식(subList 등) 대신 **Spring Data JPA의 `Pageable`/`Page<Board>`**를 사용한다. `BoardController.list()`가 `@PageableDefault(size = 5, sort = "id", direction = DESC) Pageable`을 받아 그대로 `boardRepository.findAll(pageable)`에 넘긴다
+- `Page<T>`는 `content`/`number`/`size`/`totalElements`/`totalPages`/`first`/`last`를 그대로 제공하므로, 페이지네이션 화면(`fragments/layout.html`의 `pagination` 프래그먼트)은 별도 DTO 없이 그대로 재사용된다
+- `DataInitializer`가 페이징 효과를 볼 수 있도록 샘플 글 12개를 시드한다 (이미 데이터가 있으면 건너뜀)
 
 ### 아직 없는 것 (다음 단계에서 추가)
-파일 첨부 · 페이징 · 댓글 API · 테스트 · 시큐리티 · AI
+댓글 API · 테스트 · 시큐리티 · AI
 
 ## 실행 전 준비 — 로컬 PostgreSQL
 
@@ -65,17 +64,18 @@ docker run -d --name board-pg -e POSTGRES_PASSWORD=1234 -e POSTGRES_DB=boarddb -
 net.datasa.board
 ├─ SpringBoardApplication      애플리케이션 진입점
 ├─ controller
-│   ├─ BoardController         게시판 요청 처리(CRUD) + 검증 (로그인 확인은 인터셉터가 담당)
+│   ├─ BoardController         게시판 요청 처리(CRUD) + 페이징 + 파일 업/다운로드
 │   ├─ MemberController        회원가입·로그인·로그아웃 + 검증
 │   └─ HomeController          "/" → 게시판으로 이동
 ├─ service
-│   ├─ BoardService            게시판 비즈니스 로직 (트랜잭션 경계 포함)
-│   └─ MemberService           회원 가입·로그인 검증
+│   ├─ BoardService            게시판 비즈니스 로직 (Pageable, 파일 첨부, 트랜잭션)
+│   ├─ MemberService           회원 가입·로그인 검증
+│   └─ FileService              첨부파일 저장/조회/삭제 (디스크)
 ├─ repository
 │   ├─ BoardRepository          JPA 게시글 저장소
 │   └─ MemberRepository         JPA 회원 저장소
 ├─ domain
-│   ├─ Board                   게시글 엔티티 (@Entity)
+│   ├─ Board                   게시글 엔티티 (@Entity, 첨부파일 필드 포함)
 │   └─ Member                  회원 엔티티 (@Entity)
 ├─ exception
 │   └─ BoardNotFoundException   없는 글 요청 → 404 (@ResponseStatus)
@@ -91,5 +91,5 @@ net.datasa.board
 │       └─ LoginCheckInterceptor  로그인 체크 인터셉터
 └─ config
     ├─ WebConfig                필터·인터셉터 등록
-    └─ DataInitializer          샘플 회원·데이터 주입 (중복 방지)
+    └─ DataInitializer          샘플 회원·데이터 주입 (중복 방지, 페이징용 12건 시드)
 ```

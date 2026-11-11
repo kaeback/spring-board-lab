@@ -13,7 +13,6 @@
 
     <div class="toolbar">
         <span></span>
-        <!-- 글쓰기는 로그인한 사용자에게만 -->
         <a th:if="${session.loginMember != null}" th:href="@{/boards/write}" class="btn">글쓰기</a>
     </div>
 
@@ -24,22 +23,30 @@
             <th>제목</th>
             <th style="width:120px">작성자</th>
             <th class="center" style="width:80px">조회</th>
+            <th class="center" style="width:130px">작성일</th>
         </tr>
         </thead>
         <tbody>
-        <tr th:if="${boards.isEmpty()}">
-            <td class="center" colspan="4">등록된 글이 없습니다.</td>
+        <tr th:if="${page.isEmpty()}">
+            <td class="center" colspan="5">등록된 글이 없습니다.</td>
         </tr>
-        <tr th:each="board : ${boards}">
-            <td class="center" th:text="${board.id}">1</td>
+        <tr th:each="board, stat : ${page.content}">
+            <!-- 최신글이 큰 번호가 되도록 전체개수 기준으로 역순 번호 부여 -->
+            <td class="center"
+                th:text="${page.totalElements - (page.number * page.size) - stat.index}">1</td>
             <td>
                 <a th:href="@{/boards/{id}(id=${board.id})}" th:text="${board.title}">제목</a>
+                <span th:if="${board.hasAttachment}" title="첨부파일">📎</span>
             </td>
             <td th:text="${board.writer}">작성자</td>
             <td class="center" th:text="${board.viewCount}">0</td>
+            <td class="center" th:text="${#temporals.format(board.createdAt, 'yyyy-MM-dd HH:mm')}">날짜</td>
         </tr>
         </tbody>
     </table>
+
+    <!-- 페이징 조각 -->
+    <div th:replace="~{fragments/layout :: pagination(${page})}"></div>
 </div>
 </body>
 </html>

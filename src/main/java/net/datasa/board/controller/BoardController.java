@@ -7,18 +7,28 @@ import net.datasa.board.domain.Board;
 import net.datasa.board.domain.Member;
 import net.datasa.board.dto.BoardForm;
 import net.datasa.board.service.BoardService;
+import net.datasa.board.service.FileService;
 import net.datasa.board.web.SessionConst;
+import org.springframework.core.io.Resource;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 /**
  * 게시판 화면 컨트롤러.
  *
- * step5: 로그인 여부 확인은 {@code LoginCheckInterceptor}가 담당한다.
- * 따라서 컨트롤러에는 "로그인 안 했으면 redirect" 코드가 더 이상 없다.
- * (단, "작성자 본인인지"를 따지는 권한 검사는 인터셉터가 못 하므로 여기 남는다.)
+ * step6: 목록 페이징(Pageable), 첨부파일 업로드/다운로드를 추가했다.
  */
 @Controller
 @RequiredArgsConstructor
@@ -26,16 +36,18 @@ import org.springframework.web.bind.annotation.*;
 public class BoardController {
 
     private final BoardService boardService;
+    private final FileService fileService;
 
     /** 세션에서 로그인 회원을 꺼낸다. (보호 경로에서는 인터셉터가 보장하므로 null이 아니다.) */
     private Member loginMember(HttpSession session) {
         return (Member) session.getAttribute(SessionConst.LOGIN_MEMBER);
     }
 
-    /** 글 목록 (누구나) */
+    /** 글 목록 + 페이징 (누구나). 기본 5건씩, id 내림차순(최신순). */
     @GetMapping
-    public String list(Model model) {
-        model.addAttribute("boards", boardService.getList());
+    public String list(@PageableDefault(size = 5, sort = "id", direction = Sort.Direction.DESC) Pageable pageable,
+                       Model model) {
+        model.addAttribute("page", boardService.getList(pageable));
         return "board/list";
     }
 
@@ -46,15 +58,16 @@ public class BoardController {
         return "board/write";
     }
 
-    /** 글쓰기 처리 */
+    /** 글쓰기 처리 (첨부파일 포함) */
     @PostMapping("/write")
     public String write(@Valid @ModelAttribute("boardForm") BoardForm form,
                         BindingResult bindingResult,
+                        @RequestParam(value = "file", required = false) MultipartFile file,
                         HttpSession session) {
         if (bindingResult.hasErrors()) {
             return "board/write";
         }
-        Board board = boardService.write(form, loginMember(session).getLoginId());
+        Board board = boardService.write(form, loginMember(session).getLoginId(), file);
         return "redirect:/boards/" + board.getId();
     }
 
@@ -76,7 +89,7 @@ public class BoardController {
         form.setTitle(board.getTitle());
         form.setContent(board.getContent());
         model.addAttribute("boardForm", form);
-        model.addAttribute("boardId", id);
+        model.addAttribute("board", board);   // 현재 첨부파일명 표시용
         return "board/edit";
     }
 
@@ -85,16 +98,17 @@ public class BoardController {
     public String edit(@PathVariable Long id,
                        @Valid @ModelAttribute("boardForm") BoardForm form,
                        BindingResult bindingResult,
+                       @RequestParam(value = "file", required = false) MultipartFile file,
                        HttpSession session,
                        Model model) {
         if (!boardService.isOwner(id, loginMember(session).getLoginId())) {
             return "redirect:/boards/" + id;
         }
         if (bindingResult.hasErrors()) {
-            model.addAttribute("boardId", id);
+            model.addAttribute("board", boardService.getById(id));
             return "board/edit";
         }
-        boardService.update(id, form);
+        boardService.update(id, form, file);
         return "redirect:/boards/" + id;
     }
 
@@ -105,5 +119,26 @@ public class BoardController {
             boardService.delete(id);
         }
         return "redirect:/boards";
+    }
+
+    /** 첨부파일 다운로드 (누구나) */
+    @GetMapping("/{id}/download")
+    public ResponseEntity<Resource> download(@PathVariable Long id) {
+        Board board = boardService.getById(id);
+        if (!board.isHasAttachment()) {
+            return ResponseEntity.notFound().build();
+        }
+        Resource resource = fileService.loadAsResource(board.getStoredFileName());
+        if (resource == null) {
+            return ResponseEntity.notFound().build();
+        }
+        // 한글 파일명이 깨지지 않도록 인코딩
+        String encodedName = URLEncoder.encode(board.getOriginalFileName(), StandardCharsets.UTF_8)
+                .replaceAll("\\+", "%20");
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + encodedName + "\"; filename*=UTF-8''" + encodedName)
+                .body(resource);
     }
 }

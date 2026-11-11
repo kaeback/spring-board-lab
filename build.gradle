@@ -6,7 +6,7 @@ plugins {
 
 group = 'net.datasa'
 version = '0.0.1-SNAPSHOT'
-description = 'spring-board (step5 - 필터·인터셉터)'
+description = 'spring-board (step6 - 파일업로드·페이징)'
 
 java {
     toolchain {
@@ -19,7 +19,7 @@ repositories {
 }
 
 dependencies {
-    // step5는 웹 + 화면(Thymeleaf) + 세션 로그인 + 검증 + JPA + 필터/인터셉터를 사용한다. 시큐리티는 다음 단계에서 추가한다.
+    // step6은 웹 + 화면(Thymeleaf) + 세션 로그인 + 검증 + JPA + 필터/인터셉터 + 파일업로드/페이징을 사용한다. 시큐리티는 다음 단계에서 추가한다.
     implementation 'org.springframework.boot:spring-boot-starter-webmvc'   // Boot 4: 옛 starter-web
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
     implementation 'org.springframework.boot:spring-boot-starter-validation'   // step3
