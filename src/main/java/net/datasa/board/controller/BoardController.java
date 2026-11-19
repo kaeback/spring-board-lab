@@ -32,81 +32,42 @@ public class BoardController {
     /** 글 목록 (로그인 없이 누구나) */
     @GetMapping
     public String list(Model model) {
-        model.addAttribute("boards", boardService.getList());
-        return "board/list";
+        throw new UnsupportedOperationException("아직 구현하지 않았습니다.");
     }
 
     /** 글쓰기 화면 (로그인 필요) */
     @GetMapping("/write")
     public String writeForm(HttpSession session, Model model) {
-        if (loginMember(session) == null) {
-            return "redirect:/login?redirectURL=/boards/write";
-        }
-        model.addAttribute("boardForm", new BoardForm());
-        return "board/write";
+        throw new UnsupportedOperationException("아직 구현하지 않았습니다.");
     }
 
     /** 글쓰기 처리 (로그인 필요) */
     @PostMapping("/write")
     public String write(@ModelAttribute("boardForm") BoardForm form, HttpSession session) {
-        Member login = loginMember(session);
-        if (login == null) {
-            return "redirect:/login";
-        }
-        Board board = boardService.write(form, login.getLoginId());
-        return "redirect:/boards/" + board.getId();
+        throw new UnsupportedOperationException("아직 구현하지 않았습니다.");
     }
 
     /** 글 상세 (조회수 증가) */
     @GetMapping("/{id}")
     public String detail(@PathVariable Long id, Model model) {
-        model.addAttribute("board", boardService.getDetailAndIncreaseView(id));
-        return "board/detail";
+        throw new UnsupportedOperationException("아직 구현하지 않았습니다.");
     }
 
     /** 글 수정 화면 (작성자 본인만) */
     @GetMapping("/{id}/edit")
     public String editForm(@PathVariable Long id, HttpSession session, Model model) {
-        Member login = loginMember(session);
-        if (login == null) {
-            return "redirect:/login";
-        }
-        if (!boardService.isOwner(id, login.getLoginId())) {
-            return "redirect:/boards/" + id;   // 권한 없으면 상세로 되돌림
-        }
-        Board board = boardService.getById(id);
-        BoardForm form = new BoardForm();
-        form.setTitle(board.getTitle());
-        form.setContent(board.getContent());
-        model.addAttribute("boardForm", form);
-        model.addAttribute("boardId", id);
-        return "board/edit";
+        throw new UnsupportedOperationException("아직 구현하지 않았습니다.");
     }
 
     /** 글 수정 처리 (작성자 본인만) */
     @PostMapping("/{id}/edit")
     public String edit(@PathVariable Long id, @ModelAttribute("boardForm") BoardForm form, HttpSession session) {
-        Member login = loginMember(session);
-        if (login == null) {
-            return "redirect:/login";
-        }
-        if (!boardService.isOwner(id, login.getLoginId())) {
-            return "redirect:/boards/" + id;
-        }
-        boardService.update(id, form);
-        return "redirect:/boards/" + id;
+        throw new UnsupportedOperationException("아직 구현하지 않았습니다.");
     }
 
     /** 글 삭제 (작성자 본인만) */
     @PostMapping("/{id}/delete")
     public String delete(@PathVariable Long id, HttpSession session) {
-        Member login = loginMember(session);
-        if (login == null) {
-            return "redirect:/login";
-        }
-        if (boardService.isOwner(id, login.getLoginId())) {
-            boardService.delete(id);
-        }
-        return "redirect:/boards";
+        throw new UnsupportedOperationException("아직 구현하지 않았습니다.");
     }
 }
