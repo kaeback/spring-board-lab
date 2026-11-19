@@ -5,8 +5,6 @@ import lombok.Setter;
 
 /**
  * 회원 도메인 객체.
- *
- * step2에서는 비밀번호를 평문으로 저장한다. (암호화는 시큐리티 단계에서 다룬다.)
  */
 @Getter
 @Setter

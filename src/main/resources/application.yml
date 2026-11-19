@@ -1,9 +1,6 @@
 spring:
   application:
     name: spring-board
-  # step1은 DB를 쓰지 않으므로 datasource 설정이 없다.
-  thymeleaf:
-    cache: false        # 개발 중 템플릿 변경을 바로 반영 (재시작 없이)
 
 server:
   port: 8080

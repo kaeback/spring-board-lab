@@ -20,8 +20,7 @@ import java.util.Optional;
 /**
  * 회원가입 · 로그인 · 로그아웃 컨트롤러.
  *
- * step2는 Spring Security 없이 <b>세션(HttpSession)</b>으로 로그인 상태를 직접 관리한다.
- * 입력값 검증은 아직 없다. (검증은 step3에서 추가한다.)
+ * step2는 Spring Security 없이 세션(HttpSession)으로 로그인 상태를 직접 관리한다.
  */
 @Controller
 @RequiredArgsConstructor
